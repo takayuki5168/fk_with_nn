@@ -22,15 +22,13 @@ class MyChain(Chain):
         super(MyChain, self).__init__(
             l1=L.Linear(5, 20),
             l2=L.Linear(50),
-            l3=L.Linear(50),
-            l4=L.Linear(18)
+            l3=L.Linear(18)
             )
         
     def forward(self, x):
         h = F.relu(self.l1(x))
         h = F.relu(self.l2(h))
-        h = F.relu(self.l3(h))
-        o = self.l4(h)
+        o = self.l3(h)
         return o
 
     # forward and save output
@@ -248,7 +246,6 @@ class LearnFks():
         for i in range(100):
             self.model.zerograds()
             self.model(x)
-            '''
             t = Variable(np.array([[
                 self.model.res[0][0].data, self.model.res[0][1].data, self.model.res[0][2].data,
                 self.model.res[0][3].data, self.model.res[0][4].data, self.model.res[0][5].data,
@@ -256,17 +253,16 @@ class LearnFks():
                 self.model.res[0][9].data, self.model.res[0][10].data, self.model.res[0][11].data,
                 self.model.res[0][12].data, self.model.res[0][13].data, self.model.res[0][14].data,
                 req.pos_x[5], req.pos_y[5], req.pos_z[5]]]).astype(np.float32).reshape(1, 18))
-            '''
             loss = self.model.loss(t)
             loss.backward()
-            x = Variable((x - 0.001 * x.grad_var).data)
+            x = Variable((x - 0.05 * x.grad_var).data)
             
             # apply input restriction
             for j in range(5):
                 if x[0][j].data > 120:
-                    x[0][j] = 120
+                    x[0][j].data = np.float32(120)
                 if x[0][j].data < -120:
-                    x[0][j] = -120
+                    x[0][j].data = np.float32(-120)
 
         ik_res = IkResponse()
         ik_res.joint_angle = [x[0][0].data, x[0][1].data, x[0][2].data, x[0][3].data, x[0][4].data]

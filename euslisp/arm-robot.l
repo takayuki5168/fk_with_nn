@@ -49,11 +49,11 @@
 	   (send l1 :assoc l2)
 	   
 	   ;; joints
-	   (setq j1 (instance rotational-joint :init :name 'j1 :parent-link l1 :child-link l2 :axis :x :min -90 :max 90)
-		 j2 (instance rotational-joint :init :name 'j2 :parent-link l2 :child-link l3 :axis :x :min -90 :max 90)
-		 j3 (instance rotational-joint :init :name 'j3 :parent-link l3 :child-link l4 :axis :x :min -90 :max 90)
-		 j4 (instance rotational-joint :init :name 'j4 :parent-link l4 :child-link l5 :axis :x :min -90 :max 90)
-		 j5 (instance rotational-joint :init :name 'j5 :parent-link l5 :child-link l6 :axis :x :min -90 :max 90)
+	   (setq j1 (instance rotational-joint :init :name 'j1 :parent-link l1 :child-link l2 :axis :x :min -120 :max 120)
+		 j2 (instance rotational-joint :init :name 'j2 :parent-link l2 :child-link l3 :axis :x :min -120 :max 120)
+		 j3 (instance rotational-joint :init :name 'j3 :parent-link l3 :child-link l4 :axis :x :min -120 :max 120)
+		 j4 (instance rotational-joint :init :name 'j4 :parent-link l4 :child-link l5 :axis :x :min -120 :max 120)
+		 j5 (instance rotational-joint :init :name 'j5 :parent-link l5 :child-link l6 :axis :x :min -120 :max 120)
 		 )
 	   (setq links (list l1 l2 l3 l4 l5 l6))
 	   (setq joint-list (list j1 j2 j3 j4 j5))

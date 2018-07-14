@@ -58,10 +58,13 @@ class LearnFks():
         rospy.init_node("fk_server")
 
     # print percentage of progress every 10%
-    def percentage(self, idx, loop_num):
+    def percentage(self, idx, loop_num, val=None):
         split_num = 10
         if (idx + 1) % int(loop_num / split_num) == 0:
-            print('{}% {}/{}'.format((idx + 1) * 100 / loop_num, idx + 1, loop_num))
+            if val == None:
+                print('{}% {}/{}'.format((idx + 1) * 100 / loop_num, idx + 1, loop_num))
+            else:
+                print('{}% {}/{}, {}'.format((idx + 1) * 100 / loop_num, idx + 1, loop_num, val))
 
     # load data from log files
     def load_data(self, log_file="../log/fks.log"):
@@ -161,8 +164,9 @@ class LearnFks():
         
     def train(self, loop_num=1000):
         losses = []
+        now_loss = None
         for i in range(loop_num):
-            self.percentage(i, loop_num)
+            self.percentage(i, loop_num, now_loss)
 
             # train
             x, y = self.get_batch_train(self.BATCH_SIZE)
@@ -174,6 +178,7 @@ class LearnFks():
             self.model(x_)
 
             loss = self.model.loss(t_)
+            now_loss = loss.data
                         
             loss.backward()
             self.optimizer.update()
@@ -198,37 +203,19 @@ class LearnFks():
         self.model(x_)
         loss = self.model.loss(t_)
         
-        print self.model.res
-        print t_
-        
         print('[Test] loss is {}'.format(loss.data))
         
-    '''
+
     def optimize_input(self): # TODO add max input restriction
-        x = Variable(np.array([self.past_states[-1 * self.DELTA_STEP], self.past_states[-2 * self.DELTA_STEP], self.now_input]).astype(np.float32).reshape(1,6)) # TODO random value is past state
-        t = Variable(np.array(self.state_ref).astype(np.float32).reshape(1,2))
-        loop_flag = True
-        print "po"
-        for i in range(20):    # optimize loop  loop_num is 10 == hz is 90
+        x = 0
+        t = 0
+        while True:
             self.model.zerograds()            
             self.model(x)
-            # loss = self.model.loss(t)
 
-            loss_pitch = 0
-            for i in range(len(t)):
-                loss_pitch += (t[i][0].data - self.model.res[i][0].data)**2
-            loss_pitch /= len(t)
-            loss_yaw = 0
-            for i in range(len(t)):
-                loss_yaw += (t[i][1].data - self.model.res[i][1].data)**2 #self.model.loss_yaw(t_test_)
-            loss_yaw /= len(t)
- 
-            loss = self.model.loss_for_optimize_input(t)
-            loss.backward()
-            
             x = Variable((x - 0.0005 * x.grad_var).data)
             now_input = [x[0][4].data, x[0][5].data]
-            print now_input[0], now_input[1], loss_pitch, loss_yaw
+            
             # apply input restriction
             for j in range(self.PAST_INPUT_NUM * self.INPUT_DIM):
                 # diff input restriction
@@ -249,10 +236,6 @@ class LearnFks():
             x = Variable(np.array([self.past_states[-1 * self.DELTA_STEP], self.past_states[-2 * self.DELTA_STEP], now_input]).astype(np.float32).reshape(1,6)) # TODO random value is past state
             if loop_flag == False:
                 break
-
-        self.now_input = [float(x[0][self.PAST_STATE_NUM * self.STATE_DIM + 0].data), float(x[0][self.PAST_STATE_NUM * self.STATE_DIM + 1].data)]
-        self.past_inputs.append([self.now_input[0], self.now_input[1]])
-    '''
 
     def begin(self):
         s = rospy.Service('fk', Fk, self.calcFK)
@@ -304,9 +287,9 @@ if __name__ == '__main__':
     li.make_model()
     if model_flag:
         li.load_model()
-    li.load_data()    
 
-    if train_flag:    
+    if train_flag:
+        li.load_data()    
         print('[Train] start')
         li.train(loop_num=10000)
         li.save_model()

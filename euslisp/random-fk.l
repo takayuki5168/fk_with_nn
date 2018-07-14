@@ -15,15 +15,17 @@
 (send *j4* :set-color :white)
 (setq *j5* (make-sphere 10))
 (send *j5* :set-color :white)
-(objects (list *robot* (send *robot* :end-coords) *j1* *j2* *j3* *j4* *j5*))
+(setq *j6* (make-sphere 10))
+(send *j6* :set-color :white)
+(objects (list *robot* *j1* *j2* *j3* *j4* *j5* *j6*))
 
 (do-until-key
  (setq req (instance fk_with_nn::FkRequest :init))
- (send req :a (- (random 180) 90))
- (send req :b (- (random 180) 90))
- (send req :c (- (random 180) 90))
- (send req :d (- (random 180) 90))
- (send req :e (- (random 180) 90))
+ (send req :a (- (random 240) 120))
+ (send req :b (- (random 240) 120))
+ (send req :c (- (random 240) 120))
+ (send req :d (- (random 240) 120))
+ (send req :e (- (random 240) 120))
  
  (setq res (ros::service-call "fk" req t))
  (send *robot* :angle-vector (float-vector
@@ -47,6 +49,8 @@
  (send *j4* :locate (float-vector 50 (send res :p) (send res :q)))
  (send *j5* :reset-coords)
  (send *j5* :locate (float-vector 50 (send res :s) (send res :t)))
+ (send *j6* :reset-coords)
+ (send *j6* :locate (float-vector 50 (send res :v) (send res :w)))
 
  (send *irtviewer* :draw-objects)
  (setq before (ros::time-now))
@@ -54,3 +58,5 @@
    (x::window-main-one)
    )
  )
+
+(exit)

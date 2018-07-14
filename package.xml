@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>fk_with_nn</name>
+  <version>0.0.4</version>
+  <description>fk_with_nn package</description>
+
+  <maintainer email="t-murooka@jsk.imi.i.u-tokyo.ac.jp">Takayuki Murooka</maintainer>
+  <author email="t-murooka@jsk.imi.i.u-tokyo.ac.jp">Takayuki Murooka</author>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>  
+
+  <export>
+  </export>
+</package>

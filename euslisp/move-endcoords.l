@@ -1,10 +1,10 @@
 (load "arm-robot.l")
 
 (setq *start-coords* (make-coords))
-(send *start-coords* :locate #f(100 0 0))
+(send *start-coords* :locate #f(-186.603 363.205))
 
 (setq *end-coords* (make-coords))
-(send *end-coords* :locate #f(300 300 0))
+(send *end-coords* :locate #f(186.603 363.205))
 
 (setq *now-coords* *start-coords*)
 
@@ -50,5 +50,11 @@
 
     (print next-pos)
     (send *now-coords* :translate scaled-vector)
+
+    (print "wait 10s")
+    (setq before (ros::time-now))
+    (while (> 10 (send (ros::time- (ros::time-now) before) :to-sec))
+      (x::window-main-one)
+      )
     )
   )

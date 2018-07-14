@@ -12,6 +12,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 add_service_files(
   FILES
   Fk.srv
+  EE_pos.srv  
   )
 
 generate_messages(

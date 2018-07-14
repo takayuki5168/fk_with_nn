@@ -43,7 +43,7 @@ class MyChain(Chain):
         return F.mean_squared_error(self.res, t)
 
     # loss for optimize input
-    def loss_for_optimize_input(self, t):
+    def loss_for_end_effector(self, t):
         return F.mean_squared_error(self.res, t)
 
 class LearnFks():
@@ -243,30 +243,15 @@ class LearnFks():
         rospy.spin()
         
     def calcFK(self, req):
-        x_ = Variable(np.array([[req.a, req.b, req.c, req.d, req.e]]).astype(np.float32).reshape(1, 5))
+        x_ = Variable(np.array([[req.joint_angle[0], req.joint_angle[1], req.joint_angle[2], req.joint_angle[3], req.joint_angle[4]]]).astype(np.float32).reshape(1, 5))
         li.model(x_)
         res = li.model.res
-   
-        return FkResponse(
-            res[0][0].data,
-            res[0][1].data,
-            res[0][2].data,
-            res[0][3].data,
-            res[0][4].data,
-            res[0][5].data,
-            res[0][6].data,
-            res[0][7].data,            
-            res[0][8].data,
-            res[0][9].data,
-            res[0][10].data,
-            res[0][11].data,           
-            res[0][12].data,
-            res[0][13].data,
-            res[0][14].data,
-            res[0][15].data,
-            res[0][16].data,
-            res[0][17].data 
-        )
+
+        fk_res = FkResponse()
+        fk_res.pos_x = [res[0][0].data, res[0][3].data, res[0][6].data, res[0][9].data, res[0][12].data, res[0][15].data]
+        fk_res.pos_y = [res[0][1].data, res[0][4].data, res[0][7].data, res[0][10].data, res[0][13].data, res[0][16].data]
+        fk_res.pos_z = [res[0][2].data, res[0][5].data, res[0][8].data, res[0][11].data, res[0][14].data, res[0][17].data]
+        return fk_res
     
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, lambda signal, frame: sys.exit(0))

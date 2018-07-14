@@ -21,36 +21,32 @@
 
 (do-until-key
  (setq req (instance fk_with_nn::FkRequest :init))
- (send req :a (- (random 240) 120))
- (send req :b (- (random 240) 120))
- (send req :c (- (random 240) 120))
- (send req :d (- (random 240) 120))
- (send req :e (- (random 240) 120))
+ (send req :joint_angle
+       (float-vector (- (random 240) 120)
+		     (- (random 240) 120)
+
+		     (- (random 240) 120)
+
+		     (- (random 240) 120)
+		     (- (random 240) 120))
+       )
  
  (setq res (ros::service-call "fk" req t))
- (send *robot* :angle-vector (float-vector
-			      (send req :a)
-			      (send req :b)
-			      (send req :c)
-			      (send req :d)
-			      (send req :e)			      
-			      )
-       )
- ;;(send *irtviewer* :draw-objects)
+ (send *robot* :angle-vector (send req :joint_angle))
  
  
  (send *j1* :reset-coords)
- (send *j1* :locate (float-vector 50 (send res :g) (send res :h)))
+ (send *j1* :locate (float-vector 50 (elt (send res :pos_y) 0) (elt (send res :pos_z) 0)))
  (send *j2* :reset-coords)
- (send *j2* :locate (float-vector 50 (send res :j) (send res :k)))
+ (send *j2* :locate (float-vector 50 (elt (send res :pos_y) 1) (elt (send res :pos_z) 1)))
  (send *j3* :reset-coords)
- (send *j3* :locate (float-vector 50 (send res :m) (send res :n)))
+ (send *j3* :locate (float-vector 50 (elt (send res :pos_y) 2) (elt (send res :pos_z) 2)))
  (send *j4* :reset-coords)
- (send *j4* :locate (float-vector 50 (send res :p) (send res :q)))
+ (send *j4* :locate (float-vector 50 (elt (send res :pos_y) 3) (elt (send res :pos_z) 3)))
  (send *j5* :reset-coords)
- (send *j5* :locate (float-vector 50 (send res :s) (send res :t)))
+ (send *j5* :locate (float-vector 50 (elt (send res :pos_y) 4) (elt (send res :pos_z) 4)))
  (send *j6* :reset-coords)
- (send *j6* :locate (float-vector 50 (send res :v) (send res :w)))
+ (send *j6* :locate (float-vector 50 (elt (send res :pos_y) 5) (elt (send res :pos_z) 5)))
 
  (send *irtviewer* :draw-objects)
  (setq before (ros::time-now))

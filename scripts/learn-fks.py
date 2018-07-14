@@ -15,6 +15,7 @@ import argparse
 
 import rospy
 from fk_with_nn.srv import *
+from std_msgs.msg import Float64MultiArray
 
 class MyChain(Chain):
     def __init__(self):
@@ -22,16 +23,14 @@ class MyChain(Chain):
             l1=L.Linear(5, 20),
             l2=L.Linear(50),
             l3=L.Linear(50),
-            l4=L.Linear(50),
-            l5=L.Linear(18)
+            l4=L.Linear(18)
             )
         
     def forward(self, x):
         h = F.relu(self.l1(x))
         h = F.relu(self.l2(h))
         h = F.relu(self.l3(h))
-        h = F.relu(self.l4(h))
-        o = self.l5(h)
+        o = self.l4(h)
         return o
 
     # forward and save output
@@ -44,7 +43,8 @@ class MyChain(Chain):
 
     # loss for optimize input
     def loss_for_end_effector(self, t):
-        return F.mean_squared_error(self.res, t)
+        #return F.mean_squared_error(self.res, t)        
+        return Variable(np.array(((self.res - t)[0][-1].data**2 + (self.res - t)[0][-2].data**2 + (self.res - t)[0][-3].data**2) / 3).astype(np.float32))
 
 class LearnFks():
     def __init__(self):
@@ -56,6 +56,13 @@ class LearnFks():
 
         # init ros variable
         rospy.init_node("fk_server")
+        rospy.Subscriber("angle_vector", Float64MultiArray, self.callback)
+        r = rospy.Rate(30)        
+
+        self.angle_vector = [0, 0, 0, 0, 0]
+
+    def callback(self, msg):
+        self.angle_vector = msg.data
 
     # print percentage of progress every 10%
     def percentage(self, idx, loop_num, val=None):
@@ -206,38 +213,7 @@ class LearnFks():
         print('[Test] loss is {}'.format(loss.data))
         
 
-    def optimize_input(self): # TODO add max input restriction
-        x = 0
-        t = 0
-        while True:
-            self.model.zerograds()            
-            self.model(x)
-
-            x = Variable((x - 0.0005 * x.grad_var).data)
-            now_input = [x[0][4].data, x[0][5].data]
-            
-            # apply input restriction
-            for j in range(self.PAST_INPUT_NUM * self.INPUT_DIM):
-                # diff input restriction
-                if now_input[j] - self.now_input[j] > self.MAX_INPUT_DIFF_RESTRICTION[j]:
-                    now_input[j] = np.float32(self.now_input[j] + self.MAX_INPUT_DIFF_RESTRICTION[j])
-                    #loop_flag = False
-                elif self.now_input[j] - now_input[j] > self.MAX_INPUT_DIFF_RESTRICTION[j]:
-                    now_input[j] = np.float32(self.now_input[j] - self.MAX_INPUT_DIFF_RESTRICTION[j])
-                    #loop_flag = False                    
-                # max min input restriction
-                if now_input[j] > self.MAX_INPUT_RESTRICTION[j]:
-                    now_input[j] = self.MAX_INPUT_RESTRICTION[j]
-                    #loop_flag = False                    
-                elif now_input[j] < self.MIN_INPUT_RESTRICTION[j]:
-                    now_input[j] = self.MIN_INPUT_RESTRICTION[j]
-                    #loop_flag = False                    
-              
-            x = Variable(np.array([self.past_states[-1 * self.DELTA_STEP], self.past_states[-2 * self.DELTA_STEP], now_input]).astype(np.float32).reshape(1,6)) # TODO random value is past state
-            if loop_flag == False:
-                break
-
-    def begin(self):
+    def begin_fk(self):
         s = rospy.Service('fk', Fk, self.calcFK)
         print "Ready to FK."
         rospy.spin()
@@ -252,7 +228,50 @@ class LearnFks():
         fk_res.pos_y = [res[0][1].data, res[0][4].data, res[0][7].data, res[0][10].data, res[0][13].data, res[0][16].data]
         fk_res.pos_z = [res[0][2].data, res[0][5].data, res[0][8].data, res[0][11].data, res[0][14].data, res[0][17].data]
         return fk_res
-    
+
+    def begin_move(self):
+        s = rospy.Service('ik', Ik, self.optimize_for_end_effector)
+        print "Ready to FK."
+        rospy.spin()
+
+    def optimize_for_end_effector(self, req):
+        x = Variable(np.array([self.angle_vector]).astype(np.float32).reshape(1, 5))
+        t = Variable(np.array([[req.pos_x[0], req.pos_y[0], req.pos_z[0],
+                               req.pos_x[1], req.pos_y[1], req.pos_z[1],
+                               req.pos_x[2], req.pos_y[2], req.pos_z[2],
+                               req.pos_x[3], req.pos_y[3], req.pos_z[3],
+                               req.pos_x[4], req.pos_y[4], req.pos_z[4],
+                               req.pos_x[5], req.pos_y[5], req.pos_z[5]]]
+        ).astype(np.float32).reshape(1, 18))
+        
+        # optimize loop
+        for i in range(100):
+            self.model.zerograds()
+            self.model(x)
+            '''
+            t = Variable(np.array([[
+                self.model.res[0][0].data, self.model.res[0][1].data, self.model.res[0][2].data,
+                self.model.res[0][3].data, self.model.res[0][4].data, self.model.res[0][5].data,
+                self.model.res[0][6].data, self.model.res[0][7].data, self.model.res[0][8].data,
+                self.model.res[0][9].data, self.model.res[0][10].data, self.model.res[0][11].data,
+                self.model.res[0][12].data, self.model.res[0][13].data, self.model.res[0][14].data,
+                req.pos_x[5], req.pos_y[5], req.pos_z[5]]]).astype(np.float32).reshape(1, 18))
+            '''
+            loss = self.model.loss(t)
+            loss.backward()
+            x = Variable((x - 0.001 * x.grad_var).data)
+            
+            # apply input restriction
+            for j in range(5):
+                if x[0][j].data > 120:
+                    x[0][j] = 120
+                if x[0][j].data < -120:
+                    x[0][j] = -120
+
+        ik_res = IkResponse()
+        ik_res.joint_angle = [x[0][0].data, x[0][1].data, x[0][2].data, x[0][3].data, x[0][4].data]
+        return ik_res
+                    
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, lambda signal, frame: sys.exit(0))
 
@@ -260,6 +279,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", "-t", nargs='?', default=False, const=True, help="train NN")
     parser.add_argument("--fk", "-f", nargs='?', default=False, const=True, help="forward kinematics")
+    parser.add_argument("--move", "-move", nargs='?', default=False, const=True, help="move with bp")
     parser.add_argument("--model", "-m", nargs='?', default=False, const=True, help="model of network")        
     args = parser.parse_args()
     
@@ -267,6 +287,7 @@ if __name__ == '__main__':
     train_flag = int(args.train)
     fk_flag = int(args.fk)
     model_flag = int(args.model)
+    move_flag = int(args.move)    
 
     li = LearnFks()
     li.make_model()
@@ -283,4 +304,7 @@ if __name__ == '__main__':
         li.test()
 
     if fk_flag:        
-        li.begin()
+        li.begin_fk()
+
+    if move_flag:
+        li.begin_move()

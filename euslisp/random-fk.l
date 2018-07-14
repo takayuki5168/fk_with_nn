@@ -24,9 +24,7 @@
  (send req :joint_angle
        (float-vector (- (random 240) 120)
 		     (- (random 240) 120)
-
 		     (- (random 240) 120)
-
 		     (- (random 240) 120)
 		     (- (random 240) 120))
        )

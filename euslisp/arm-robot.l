@@ -70,4 +70,3 @@
   )
 
 (setq *robot* (instance arm-robot :init))
-;;(objects (list *robot*))

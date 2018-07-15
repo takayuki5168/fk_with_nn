@@ -1,7 +1,10 @@
-# 5DOF arm robot and Forward Kinematics with Deep Neural Network
+# 5DOF arm robot calculating Forward Kinematics with Deep Neural Network
 
 ## Demo
+### Forward Kinematics
 ![FK](https://github.com/takayuki5168/fk_with_nn/blob/master/gif/random-fk.gif)
+
+### Inverse Kinematics
 ![IK](https://github.com/takayuki5168/fk_with_nn/blob/master/gif/ik-with-nn.gif)
 
 ## Network Architecture

@@ -13,7 +13,6 @@ add_service_files(
   FILES
   Fk.srv
   Ik.srv
-  EE_pos.srv  
   )
 
 generate_messages(

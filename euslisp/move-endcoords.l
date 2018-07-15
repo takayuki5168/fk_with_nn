@@ -14,7 +14,7 @@
 (setq *start-coords* (make-coords))
 (send *start-coords* :locate #f(0 186.603 363.205))
 (setq *end-coords* (make-coords))
-(send *end-coords* :locate #f(0 186.603 -100)) ;;363.205))
+(send *end-coords* :locate #f(0 -100 -300)) ;;-186.603 -100)) ;;363.205))
 (send *robot* :inverse-kinematics *start-coords* :link-list (send *robot* :link-list (send *robot* :end-coords :parent)) :move-target (send *robot* :end-coords) :translation-axis t :rotation-axis t)
 (setq *now-coords* (send *robot* :end-coords))
 (setq *ref-pos* (make-sphere 10))

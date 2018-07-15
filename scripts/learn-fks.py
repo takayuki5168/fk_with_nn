@@ -234,13 +234,13 @@ class LearnFks():
 
     def optimize_for_end_effector(self, req):
         x = Variable(np.array([self.angle_vector]).astype(np.float32).reshape(1, 5))
-        t = Variable(np.array([[req.pos_x[0], req.pos_y[0], req.pos_z[0],
-                               req.pos_x[1], req.pos_y[1], req.pos_z[1],
-                               req.pos_x[2], req.pos_y[2], req.pos_z[2],
-                               req.pos_x[3], req.pos_y[3], req.pos_z[3],
-                               req.pos_x[4], req.pos_y[4], req.pos_z[4],
-                               req.pos_x[5], req.pos_y[5], req.pos_z[5]]]
-        ).astype(np.float32).reshape(1, 18))
+        #t = Variable(np.array([[req.pos_x[0], req.pos_y[0], req.pos_z[0],
+        #                       req.pos_x[1], req.pos_y[1], req.pos_z[1],
+        #                       req.pos_x[2], req.pos_y[2], req.pos_z[2],
+        #                       req.pos_x[3], req.pos_y[3], req.pos_z[3],
+        #                       req.pos_x[4], req.pos_y[4], req.pos_z[4],
+        #                       req.pos_x[5], req.pos_y[5], req.pos_z[5]]]
+        #).astype(np.float32).reshape(1, 18))
         
         # optimize loop
         for i in range(100):
@@ -268,6 +268,48 @@ class LearnFks():
         ik_res.joint_angle = [x[0][0].data, x[0][1].data, x[0][2].data, x[0][3].data, x[0][4].data]
         return ik_res
 
+    def begin_collision(self):
+        s = rospy.Service('ik', Ik, self.optimize_for_middle_effector)
+        print "Ready to FK."
+        rospy.spin()
+    
+    def optimize_for_middle_effector(self, req):
+        x = Variable(np.array([self.angle_vector]).astype(np.float32).reshape(1, 5))
+
+        # optimize loop
+        for i in range(100):
+            self.model.zerograds()
+            self.model(x)
+            t_list = [
+                self.model.res[0][0].data, self.model.res[0][1].data, self.model.res[0][2].data,
+                self.model.res[0][3].data, self.model.res[0][4].data, self.model.res[0][5].data,
+                self.model.res[0][6].data, self.model.res[0][7].data, self.model.res[0][8].data,
+                self.model.res[0][9].data, self.model.res[0][10].data, self.model.res[0][11].data,
+                self.model.res[0][12].data, self.model.res[0][13].data, self.model.res[0][14].data,
+                req.pos_x[5], req.pos_y[5], req.pos_z[5]]
+            for i in range(len(req.data)):
+                d = req.data[i]
+                if d > 0:
+                    t_list[i * 3] = req.pos_x[i]
+                    t_list[i * 3 + 1] = req.pos_y[i]
+                    t_list[i * 3 + 2] = req.pos_z[i]
+            t = Variable(np.array([t_list]).astype(np.float32).reshape(1, 18))
+            loss = self.model.loss(t)
+            loss.backward()
+            x = Variable((x - 0.01 * x.grad_var).data)
+            
+            # apply input restriction
+            for j in range(5):
+                if x[0][j].data > 120:
+                    x[0][j].data = np.float32(120)
+                if x[0][j].data < -120:
+                    x[0][j].data = np.float32(-120)
+
+        ik_res = IkResponse()
+        ik_res.joint_angle = [x[0][0].data, x[0][1].data, x[0][2].data, x[0][3].data, x[0][4].data]
+        return ik_res
+    
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, lambda signal, frame: sys.exit(0))
 
@@ -276,6 +318,7 @@ if __name__ == '__main__':
     parser.add_argument("--train", "-t", nargs='?', default=False, const=True, help="train NN")
     parser.add_argument("--fk", "-f", nargs='?', default=False, const=True, help="forward kinematics")
     parser.add_argument("--move", "-move", nargs='?', default=False, const=True, help="move with bp")
+    parser.add_argument("--collision", "-collision", nargs='?', default=False, const=True, help="move with bp")
     parser.add_argument("--model", "-m", nargs='?', default=False, const=True, help="model of network")        
     args = parser.parse_args()
     
@@ -283,7 +326,8 @@ if __name__ == '__main__':
     train_flag = int(args.train)
     fk_flag = int(args.fk)
     model_flag = int(args.model)
-    move_flag = int(args.move)    
+    move_flag = int(args.move)
+    collision_flag = int(args.collision)        
 
     li = LearnFks()
     li.make_model()
@@ -304,3 +348,6 @@ if __name__ == '__main__':
 
     if move_flag:
         li.begin_move()
+
+    if collision_flag:
+        li.begin_collision()

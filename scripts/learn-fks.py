@@ -40,9 +40,9 @@ class MyChain(Chain):
         return F.mean_squared_error(self.res, t)
 
     # loss for optimize input
-    def loss_for_end_effector(self, t):
-        #return F.mean_squared_error(self.res, t)        
-        return Variable(np.array(((self.res - t)[0][-1].data**2 + (self.res - t)[0][-2].data**2 + (self.res - t)[0][-3].data**2) / 3).astype(np.float32))
+    #def loss_for_end_effector(self, t):
+    #    #return F.mean_squared_error(self.res, t)        
+    #    return Variable(np.array(((self.res - t)[0][-1].data**2 + (self.res - t)[0][-2].data**2 + (self.res - t)[0][-3].data**2) / 3).astype(np.float32))
 
 class LearnFks():
     def __init__(self):
@@ -267,7 +267,7 @@ class LearnFks():
         ik_res = IkResponse()
         ik_res.joint_angle = [x[0][0].data, x[0][1].data, x[0][2].data, x[0][3].data, x[0][4].data]
         return ik_res
-                    
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, lambda signal, frame: sys.exit(0))
 

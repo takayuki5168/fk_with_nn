@@ -1,8 +1,8 @@
 # 5DOF arm robot and Forward Kinematics with Deep Neural Network
 
 ## Demo
-![FK](https://github.com/takayuki5168/fk_with_nn/tree/master/gif/random-fk.gif)
-![IK](https://github.com/takayuki5168/fk_with_nn/tree/master/gif/ik-with-nn.gif)
+![FK](https://github.com/takayuki5168/fk_with_nn/blob/master/gif/random-fk.gif)
+![IK](https://github.com/takayuki5168/fk_with_nn/blob/master/gif/ik-with-nn.gif)
 
 ## Network Architecture
 Input : all joint angle

@@ -337,7 +337,7 @@ if __name__ == '__main__':
     if train_flag:
         li.load_data()    
         print('[Train] start')
-        li.train(loop_num=10000)
+        li.train(loop_num=30000)
         li.save_model()
 
         print('[Test] start')            

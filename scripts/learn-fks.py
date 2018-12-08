@@ -21,14 +21,18 @@ class MyChain(Chain):
     def __init__(self):
         super(MyChain, self).__init__(
             l1=L.Linear(5, 20),
-            l2=L.Linear(50),
-            l3=L.Linear(18)
+            l2=L.Linear(40),
+            l3=L.Linear(40),
+            l4=L.Linear(40),
+            l5=L.Linear(18)
             )
         
     def forward(self, x):
         h = F.relu(self.l1(x))
-        h = F.relu(self.l2(h))
-        o = self.l3(h)
+        h = F.relu(self.l2(x))
+        h = F.relu(self.l3(x))
+        h = F.relu(self.l4(x))
+        o = self.l5(h)
         return o
 
     # forward and save output
@@ -337,7 +341,7 @@ if __name__ == '__main__':
     if train_flag:
         li.load_data()    
         print('[Train] start')
-        li.train(loop_num=30000)
+        li.train(loop_num=100000)
         li.save_model()
 
         print('[Test] start')            
